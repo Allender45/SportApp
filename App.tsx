@@ -1,45 +1,43 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React from 'react';
+import { ImageBackground, StyleSheet, StatusBar } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import AthleteScreen from './screens/AthleteScreen';
+import WorkoutListScreen from './screens/WorkoutListScreen';
+import WorkoutDetailScreen from './screens/WorkoutDetailScreen';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+const Stack = createNativeStackNavigator();
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
+export default function App() {
+    return (
+        <SafeAreaProvider>
+            <ImageBackground
+                source={require('./images/main_bg.png')}
+                style={styles.background}
+                resizeMode="cover"
+            >
+                <NavigationContainer>
+                    <Stack.Navigator
+                        screenOptions={{
+                            headerShown: false,
+                            headerStyle: { backgroundColor: '#2196F3' },
+                            headerTintColor: '#fff',
+                            headerTitleStyle: { fontWeight: 'bold' },
+                            contentStyle: { backgroundColor: 'transparent', paddingTop: StatusBar.currentHeight ?? 0 },
+                        }}
+                    >
+                        <Stack.Screen name="Athlete" component={AthleteScreen} options={{ title: 'Вход' }} />
+                        <Stack.Screen name="WorkoutList" component={WorkoutListScreen} options={{ title: 'Тренировки' }} />
+                        <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} options={{ title: 'Тренировка' }} />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            </ImageBackground>
+        </SafeAreaProvider>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+    background: { flex: 1 },
 });
-
-export default App;
