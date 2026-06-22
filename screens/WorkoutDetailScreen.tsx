@@ -177,10 +177,14 @@ export default function WorkoutDetailScreen({route}: Props) {
 
     const getExerciseImage = (name: string) => {
         const lower = name.toLowerCase();
-        if (lower.includes('жим'))            return require('../images/жим.png');
-        if (lower.includes('гиперэкстензия')) return require('../images/Гиперэкстензия.png');
-        if (lower.includes('подтягивани'))    return require('../images/Подтягивания.png');
-        if (lower.includes('пресс'))          return require('../images/Пресс.png');
+        if (lower.includes('жим'))            return require('../images/bench.png');
+        if (lower.includes('гиперэкстензия')) return require('../images/hyperextension.png');
+        if (lower.includes('подтягивани'))    return require('../images/pullups.png');
+        if (lower.includes('пресс'))          return require('../images/abs.png');
+        if (lower.includes('гантели в наклоне'))   return require('../images/bent dumbbells.png');
+        if (lower.includes('тяга верхнего блока'))   return require('../images/upper block thrust.png');
+        if (lower.includes('бицепс'))         return require('../images/biceps.png');
+        if (lower.includes('жим ногами'))         return require('../images/leg press.png');
         return null;
     };
 
