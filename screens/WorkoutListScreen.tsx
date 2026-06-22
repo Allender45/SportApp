@@ -19,6 +19,7 @@ type WorkoutGroup = {
     workoutGroup: number;
     total: number;
     done: number;
+    latestDate?: string;
 };
 
 export default function WorkoutListScreen({ navigation, route }: Props) {
@@ -63,9 +64,20 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
                         if (!groupMap[g]) groupMap[g] = { workoutGroup: g, total: 0, done: 0 };
                         groupMap[g].total++;
                         if (data.status === true) groupMap[g].done++;
+                        if (data.date) {
+                            const parseDate = (d: string) => { const [day, month, year] = d.split('.').map(Number); return new Date(year, month - 1, day).getTime(); };
+                            if (!groupMap[g].latestDate || parseDate(data.date) > parseDate(groupMap[g].latestDate)) {
+                                groupMap[g].latestDate = data.date;
+                            }
+                        }
                     });
 
-                    const sorted = Object.values(groupMap).sort((a, b) => a.workoutGroup - b.workoutGroup);
+                    const sorted = Object.values(groupMap).sort((a, b) => {
+                        const aDone = a.done === a.total && a.total > 0 ? 1 : 0;
+                        const bDone = b.done === b.total && b.total > 0 ? 1 : 0;
+                        if (aDone !== bDone) return aDone - bDone;
+                        return a.workoutGroup - b.workoutGroup;
+                    });
                     groupsRef.current = sorted;
                     setGroups(sorted);
                 } catch (error) {
@@ -121,6 +133,9 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
                         <Text style={[styles.cardPercent, item.done === item.total && item.total > 0 && styles.cardPercentDone]}>
                             {item.total > 0 ? Math.round((item.done / item.total) * 100) : 0}%
                         </Text>
+                        {item.latestDate && (
+                            <Text style={styles.cardDate}>{item.latestDate}</Text>
+                        )}
                     </TouchableOpacity>
                 )}
             />
@@ -139,4 +154,5 @@ const styles = StyleSheet.create({
     cardProgress:  { fontSize: 13, color: '#A6ADB8' },
     cardPercent:   { fontSize: 22, fontWeight: 'bold', color: '#3A3F47' },
     cardPercentDone: { color: '#6FBF6F' },
+    cardDate: { fontSize: 11, color: '#8F959E', marginTop: 2, textAlign: 'right' },
 });

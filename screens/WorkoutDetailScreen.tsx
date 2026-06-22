@@ -20,7 +20,7 @@ type Exercise = {
     sets: number;
     reps: number;
     trainerNote: string;
-    status: boolean;
+    status?: boolean | null;
     date: string;
     athleteComment: string;
     order?: number;
@@ -177,7 +177,6 @@ export default function WorkoutDetailScreen({route}: Props) {
 
     const getExerciseImage = (name: string) => {
         const lower = name.toLowerCase();
-        if (lower.includes('жим'))            return require('../images/bench.png');
         if (lower.includes('гиперэкстензия')) return require('../images/hyperextension.png');
         if (lower.includes('подтягивани'))    return require('../images/pullups.png');
         if (lower.includes('пресс'))          return require('../images/abs.png');
@@ -185,6 +184,7 @@ export default function WorkoutDetailScreen({route}: Props) {
         if (lower.includes('тяга верхнего блока'))   return require('../images/upper block thrust.png');
         if (lower.includes('бицепс'))         return require('../images/biceps.png');
         if (lower.includes('жим ногами'))         return require('../images/leg press.png');
+        if (lower.includes('жим'))            return require('../images/bench.png');
         return null;
     };
 
@@ -212,17 +212,15 @@ export default function WorkoutDetailScreen({route}: Props) {
                             </View>
                         ) : null; })()}
                         {ex.status && (
-                            <LinearGradient
-                                colors={['rgba(111,191,111,0.20)', 'rgba(111,191,111,0.00)']}
-                                start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
-                                style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
+                            <LinearGradient colors={['rgba(111,191,111,0.20)', 'rgba(111,191,111,0.00)']}
+                                            start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
+                                            style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
                             />
                         )}
-                        {!ex.status && ex.date !== '' && (
-                            <LinearGradient
-                                colors={['rgba(191,80,80,0.20)', 'rgba(191,80,80,0.00)']}
-                                start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
-                                style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
+                        {ex.status === false && !!ex.date && (
+                            <LinearGradient colors={['rgba(191,80,80,0.20)', 'rgba(191,80,80,0.00)']}
+                                            start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
+                                            style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
                             />
                         )}
                         <View style={styles.cardInfo}>
