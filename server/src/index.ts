@@ -4,9 +4,14 @@ import cors from 'cors';
 import { authRouter, athletesRouter, workoutsRouter, myRouter, exerciseTemplatesRoutes } from './routes';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from "node:path";
 
 const app = express();
+const webDist = path.resolve(__dirname, '../../web/dist');
 
+app.use(express.static(webDist));
+app.get(/^(?!\/(api|uploads|health)).*/, (_req, res) =>
+    res.sendFile(path.join(webDist, 'index.html')));
 app.use(cors());            // разрешаем запросы с других origin (админка)
 app.use(express.json());    // парсим JSON-тела запросов
 app.use('/uploads', express.static('uploads')); // картинки упражнений

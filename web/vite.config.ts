@@ -7,8 +7,12 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    host: true, // чтобы открывать с телефона в локальной сети
+    host: true,
     port: 82,
+    proxy: {
+      '/api': 'http://localhost:83',
+      '/uploads': 'http://localhost:83',
+    },
   },
   resolve: {
     alias: {
