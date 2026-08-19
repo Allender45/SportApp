@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание тренировок</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7fc;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 400;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-reset {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+
+        .btn-export {
+            background: #3498db;
+            color: white;
+        }
+        .btn-export:hover {
+            background: #2980b9;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .workout-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            transition: box-shadow 0.2s;
+        }
+
+        .workout-card:hover {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        }
+
+        .workout-header {
+            background: #edf2f7;
+            padding: 12px 16px;
+            border-bottom: 2px solid #cbd5e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .workout-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #2d3748;
+        }
+
+        .workout-date {
+            font-size: 14px;
+            color: #2f855a;
+            background: #c6f6d5;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .workout-date.empty {
+            background: transparent;
+            color: #a0aec0;
+            font-weight: 400;
+        }
+
+        .exercise-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .exercise-table th {
+            background: #f7fafc;
+            text-align: left;
+            padding: 8px 10px;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .exercise-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf2f7;
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .exercise-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .exercise-table .ex-name {
+            font-weight: 500;
+        }
+        .exercise-table .ex-weight,
+        .exercise-table .ex-sets,
+        .exercise-table .ex-reps {
+            text-align: center;
+        }
+        .exercise-table .ex-status {
+            text-align: center;
+            width: 40px;
+        }
+
+        /* Статусы */
+        .status-none {
+            background-color: #ffffff;
+        }
+        .status-done {
+            background-color: #d4edda !important;
+        }
+        .status-skipped {
+            background-color: #f8d7da !important;
+        }
+
+        /* Индикатор статуса в виде цветного круга */
+        .status-dot {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e0;
+            transition: all 0.15s;
+        }
+        .status-dot.none {
+            background: white;
+        }
+        .status-dot.done {
+            background: #48bb78;
+            border-color: #48bb78;
+        }
+        .status-dot.skipped {
+            background: #fc8181;
+            border-color: #fc8181;
+        }
+
+        .workout-card.completed .workout-header {
+            background: #e6fffa;
+            border-bottom-color: #38b2ac;
+        }
+
+        @media (max-width: 900px) {
+            .schedule-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .schedule-grid {
+                grid-template-columns: 1fr;
+            }
+            .exercise-table {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Расписание тренировок</h1>
+        <div class="toolbar">
+            <button class="btn btn-reset" id="resetBtn">Сбросить всё</button>
+            <button class="btn btn-export" id="exportBtn">Экспорт (JSON)</button>
+        </div>
+        <div id="schedule" class="schedule-grid"></div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- Данные по умолчанию ----------
+            const DEFAULT_EXERCISES = [
+                { name: 'Жим штанги лёжа', weight: 80, sets: 4, reps: 10 },
+                { name: 'Приседания со штангой', weight: 100, sets: 4, reps: 8 },
+                { name: 'Тяга штанги в наклоне', weight: 60, sets: 4, reps: 12 },
+                { name: 'Жим гантелей сидя', weight: 24, sets: 3, reps: 12 },
+                { name: 'Планка', weight: '—', sets: 3, reps: '60с' },
+            ];
+
+            // 9 тренировок с разными весами (прогрессия)
+            function generateDefaultData() {
+                const workouts = [];
+                for (let i = 1; i <= 9; i++) {
+                    const exercises = DEFAULT_EXERCISES.map((ex, idx) => {
+                        // небольшая вариация весов для иллюстрации
+                        let w = ex.weight;
+                        if (typeof w === 'number') {
+                            w = w + Math.floor((i - 1) / 3) * 2; // каждые 3 тренировки +2 кг
+                        }
+                        return {
+                            name: ex.name,
+                            weight: w,
+                            sets: ex.sets,
+                            reps: ex.reps,
+                            status: 'none' // 'none' | 'done' | 'skipped'
+                        };
+                    });
+                    workouts.push({
+                        id: i,
+                        exercises: exercises,
+                        dateDone: null // строка даты или null
+                    });
+                }
+                return workouts;
+            }
+
+            // ---------- Состояние ----------
+            let workoutsData = [];
+
+            // Ключ для localStorage
+            const STORAGE_KEY = 'trainerSchedule';
+
+            // Загрузка из localStorage
+            function loadData() {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        // проверка структуры (минимальная)
+                        if (Array.isArray(parsed) && parsed.length === 9) {
+                            workoutsData = parsed;
+                            return;
+                        }
+                    } catch (e) { /* игнорируем */ }
+                }
+                // если нет данных или они повреждены - генерируем дефолтные
+                workoutsData = generateDefaultData();
+                saveData();
+            }
+
+            function saveData() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutsData));
+            }
+
+            // ---------- Рендеринг ----------
+            function render() {
+                const container = document.getElementById('schedule');
+                container.innerHTML = '';
+
+                workoutsData.forEach((workout, wIdx) => {
+                    const card = document.createElement('div');
+                    card.className = 'workout-card';
+                    if (workout.dateDone) {
+                        card.classList.add('completed');
+                    }
+
+                    // --- Заголовок ---
+                    const header = document.createElement('div');
+                    header.className = 'workout-header';
+
+                    const title = document.createElement('span');
+                    title.className = 'workout-title';
+                    title.textContent = `Тренировка №${workout.id}`;
+
+                    const dateSpan = document.createElement('span');
+                    dateSpan.className = 'workout-date' + (workout.dateDone ? '' : ' empty');
+                    dateSpan.textContent = workout.dateDone ? `✅ ${workout.dateDone}` : 'не выполнена';
+                    // при клике на дату можно редактировать, но пока оставим автоматическую
+
+                    header.appendChild(title);
+                    header.appendChild(dateSpan);
+                    card.appendChild(header);
+
+                    // --- Таблица упражнений ---
+                    const table = document.createElement('table');
+                    table.className = 'exercise-table';
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Упражнение</th>
+                            <th style="text-align:center">Вес</th>
+                            <th style="text-align:center">Подх.</th>
+                            <th style="text-align:center">Повт.</th>
+                            <th style="text-align:center">Статус</th>
+                        </tr>
+                    `;
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+                    workout.exercises.forEach((ex, exIdx) => {
+                        const tr = document.createElement('tr');
+                        // класс статуса для всей строки
+                        tr.className = `status-${ex.status}`;
+                        // клик по строке для переключения статуса
+                        tr.addEventListener('click', (e) => {
+                            // игнорируем клик по чекбоксу или кнопке (если добавим)
+                            toggleExerciseStatus(wIdx, exIdx);
+                        });
+
+                        // Название
+                        const tdName = document.createElement('td');
+                        tdName.className = 'ex-name';
+                        tdName.textContent = ex.name;
+
+                        // Вес
+                        const tdWeight = document.createElement('td');
+                        tdWeight.className = 'ex-weight';
+                        tdWeight.textContent = ex.weight;
+
+                        // Подходы
+                        const tdSets = document.createElement('td');
+                        tdSets.className = 'ex-sets';
+                        tdSets.textContent = ex.sets;
+
+                        // Повторения
+                        const tdReps = document.createElement('td');
+                        tdReps.className = 'ex-reps';
+                        tdReps.textContent = ex.reps;
+
+                        // Статус (кружок)
+                        const tdStatus = document.createElement('td');
+                        tdStatus.className = 'ex-status';
+                        const dot = document.createElement('span');
+                        dot.className = `status-dot ${ex.status}`;
+                        tdStatus.appendChild(dot);
+
+                        tr.appendChild(tdName);
+                        tr.appendChild(tdWeight);
+                        tr.appendChild(tdSets);
+                        tr.appendChild(tdReps);
+                        tr.appendChild(tdStatus);
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+                    card.appendChild(table);
+                    container.appendChild(card);
+                });
+            }
+
+            // ---------- Логика переключения статуса ----------
+            function toggleExerciseStatus(workoutIdx, exerciseIdx) {
+                const workout = workoutsData[workoutIdx];
+                const ex = workout.exercises[exerciseIdx];
+                // цикл: none -> done -> skipped -> none
+                if (ex.status === 'none') {
+                    ex.status = 'done';
+                } else if (ex.status === 'done') {
+                    ex.status = 'skipped';
+                } else if (ex.status === 'skipped') {
+                    ex.status = 'none';
+                }
+
+                // Проверяем, все ли упражнения выполнены (done)
+                const allDone = workout.exercises.every(e => e.status === 'done');
+                if (allDone) {
+                    // ставим дату выполнения (сегодня)
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    workout.dateDone = dateStr;
+                } else {
+                    // если не все done, убираем дату
+                    workout.dateDone = null;
+                }
+
+                saveData();
+                render();
+            }
+
+            // ---------- Сброс всех статусов и дат ----------
+            function resetAll() {
+                if (!confirm('Сбросить все статусы и даты выполнения?')) return;
+                workoutsData.forEach(workout => {
+                    workout.exercises.forEach(ex => ex.status = 'none');
+                    workout.dateDone = null;
+                });
+                saveData();
+                render();
+            }
+
+            // ---------- Экспорт (для демонстрации) ----------
+            function exportData() {
+                const json = JSON.stringify(workoutsData, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'training_schedule.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            // ---------- Инициализация ----------
+            document.addEventListener('DOMContentLoaded', function() {
+                loadData();
+                render();
+
+                document.getElementById('resetBtn').addEventListener('click', resetAll);
+                document.getElementById('exportBtn').addEventListener('click', exportData);
+            });
+
+        })();
+    </script>
+</body>
+</html>

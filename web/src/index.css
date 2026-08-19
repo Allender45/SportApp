@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+    /* Фоны */
+    --color-night: #060B14;      /* основной фон */
+    --color-panel: #0D1522;      /* панели, сайдбар */
+    --color-card: #101A29;       /* карточки */
+    --color-line: #1B2A3D;       /* рамки, разделители */
+
+    /* Текст */
+    --color-ink: #EDF2F7;        /* основной текст */
+    --color-dim: #7A8CA3;        /* вторичный текст */
+
+    /* Акценты */
+    --color-cyan: #19C2E6;       /* рубрики, активные пункты, ссылки */
+    --color-ember: #FF8A2B;      /* CTA-кнопки */
+    --color-ember-deep: #F56A1A; /* градиентная пара к ember */
+}
