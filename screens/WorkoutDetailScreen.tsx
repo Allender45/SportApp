@@ -20,7 +20,7 @@ type Exercise = {
     sets: number;
     reps: number;
     trainerNote: string;
-    status?: boolean | null;
+    status?: string | null;
     date: string;
     athleteComment: string;
     order?: number;
@@ -152,13 +152,13 @@ export default function WorkoutDetailScreen({route}: Props) {
         const newDate = new Date().toLocaleDateString('ru-RU'); // всегда
 
         const updated = [...exercises];
-        updated[selectedIndex] = {...ex, status: done, date: newDate, athleteComment: modalComment};
+        updated[selectedIndex] = {...ex, status: done ? '✓' : '✗', date: newDate, athleteComment: modalComment};
         setExercises(updated);
         closeModal();
 
         try {
             await updateDoc(doc(db, 'exercises', ex.id), {
-                status: done,
+                status: done ? '✓' : '✗',
                 date: newDate,
                 athleteComment: modalComment,
             });
@@ -211,13 +211,13 @@ export default function WorkoutDetailScreen({route}: Props) {
                                 />
                             </View>
                         ) : null; })()}
-                        {ex.status && (
+                        {ex.status === '✓' && (
                             <LinearGradient colors={['rgba(111,191,111,0.20)', 'rgba(111,191,111,0.00)']}
                                             start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
                                             style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
                             />
                         )}
-                        {ex.status === false && !!ex.date && (
+                        {ex.status === '✗' && !!ex.date && (
                             <LinearGradient colors={['rgba(191,80,80,0.20)', 'rgba(191,80,80,0.00)']}
                                             start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
                                             style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}

@@ -1,0 +1,9 @@
+// Склонение существительных по числу: plural(2, 'повторение', 'повторения', 'повторений')
+export function plural(n: number, one: string, few: string, many: string): string {
+    const mod100 = Math.abs(n) % 100;
+    const mod10 = mod100 % 10;
+    if (mod100 > 10 && mod100 < 20) return many; // 11–19
+    if (mod10 > 1 && mod10 < 5) return few;      // 2–4, 22–24...
+    if (mod10 === 1) return one;                 // 1, 21, 31...
+    return many;                                 // 0, 5–20, 25–30...
+}

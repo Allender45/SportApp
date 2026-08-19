@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COACH
+  ATHLETE
+  ADMIN
+}
+
+enum ResultStatus {
+  DONE
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  email        String?  @unique
+  passwordHash String
+  lastName     String   @default("")
+  firstName    String   @default("")
+  middleName   String?
+  role         Role     @default(ATHLETE)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  coachProfile   Athlete[] @relation("CoachAthletes")
+  athleteProfile Athlete?  @relation("AthleteUser")
+}
+
+model Athlete {
+  id         String    @id @default(uuid())
+  userId     String    @unique
+  user       User      @relation("AthleteUser", fields: [userId], references: [id], onDelete: Cascade)
+  coachId    String?
+  coach      User?     @relation("CoachAthletes", fields: [coachId], references: [id])
+  workouts   Workout[]
+  coachNotes String?
+}
+
+model Workout {
+  id        String     @id @default(uuid())
+  athleteId String
+  athlete   Athlete    @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  number    Int
+  title     String?
+  createdAt DateTime   @default(now())
+  exercises Exercise[]
+
+  @@unique([athleteId, number])
+}
+
+model Exercise {
+  id          String   @id @default(uuid())
+  workoutId   String
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  order       Int
+  name        String
+  sets        Int
+  reps        Int
+  weight      Float    @default(0)
+  trainerNote String?
+  results     Result[]
+}
+
+model Result {
+  id             String       @id @default(uuid())
+  exerciseId     String
+  exercise       Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  status         ResultStatus
+  athleteComment String?
+  completedAt    DateTime     @default(now())
+}
+
+model ExerciseTemplate {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  imageUrl String?
+}

@@ -63,7 +63,7 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
                         const g = data.workoutGroup as number;
                         if (!groupMap[g]) groupMap[g] = { workoutGroup: g, total: 0, done: 0 };
                         groupMap[g].total++;
-                        if (data.status === true) groupMap[g].done++;
+                        if (data.status === '✓') groupMap[g].done++;
                         if (data.date) {
                             const parseDate = (d: string) => { const [day, month, year] = d.split('.').map(Number); return new Date(year, month - 1, day).getTime(); };
                             if (!groupMap[g].latestDate || parseDate(data.date) > parseDate(groupMap[g].latestDate)) {

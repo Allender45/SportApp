@@ -31,7 +31,7 @@ async function navigateToNextWorkout(
             const g = data.workoutGroup as number;
             if (!groupMap[g]) groupMap[g] = { total: 0, done: 0 };
             groupMap[g].total++;
-            if (data.status === true) groupMap[g].done++;
+            if (data.status === '✓') groupMap[g].done++;
         });
 
         const sorted = Object.entries(groupMap)
@@ -84,7 +84,7 @@ export default function AthleteScreen({ navigation }: Props) {
                 style={styles.input}
                 value={athleteId}
                 onChangeText={setAthleteId}
-                placeholder="кто ты?"
+                placeholder="Кто ты?"
                 placeholderTextColor="#555"
                 autoCapitalize="none"
                 autoCorrect={false}
