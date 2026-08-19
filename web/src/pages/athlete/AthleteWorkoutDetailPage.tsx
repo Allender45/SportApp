@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, Play, Pause, RotateCcw } from 'lucide-react';
-import { api } from '@/api/client';
+import { api, fileUrl } from '@/api';
 import { Modal } from '@/components';
-import type { WorkoutDetail } from '@/api/types';
+import type { WorkoutDetail } from '@/api';
 import { plural } from '@shared/utils';
-
-const fileUrl = (u: string) => new URL(u, api.defaults.baseURL).href;
 
 export default function AthleteWorkoutDetailPage() {
     const { id } = useParams<{ id: string }>();

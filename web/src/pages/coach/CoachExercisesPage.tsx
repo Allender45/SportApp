@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2 } from 'lucide-react';
-import { api } from '../../api/client';
+import { api, fileUrl } from '@/api';
 
 type Template = { id: string; name: string; imageUrl: string | null };
-
-// /uploads/... → абсолютный URL на сервере
-const fileUrl = (u: string) => new URL(u, api.defaults.baseURL).href;
 
 export default function CoachExercisesPage() {
     const [templates, setTemplates] = useState<Template[]>([]);
