@@ -19,8 +19,18 @@ export default function AthleteWorkoutDetailPage() {
     });
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [comment, setComment] = useState('');
-    const [seconds, setSeconds] = useState(0);
-    const [running, setRunning] = useState(false);
+    const [timerState, setTimerState] = useState<{ running: boolean; startedAt: number | null }>(() => {
+        try {
+            return JSON.parse(sessionStorage.getItem(`timer:${id}`) ?? '{"running":false,"startedAt":null}');
+        } catch {
+            return { running: false, startedAt: null };
+        }
+    });
+    const [seconds, setSeconds] = useState(() =>
+        timerState.startedAt !== null
+            ? Math.floor((Date.now() - timerState.startedAt) / 1000)
+            : 0);
+    const running = timerState.running;
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
@@ -35,22 +45,28 @@ export default function AthleteWorkoutDetailPage() {
         if (timerRef.current) clearInterval(timerRef.current);
     }, []);
 
+    useEffect(() => {
+        sessionStorage.setItem(`timer:${id}`, JSON.stringify(timerState));
+        if (!timerState.running || timerState.startedAt === null) return;
+        timerRef.current = setInterval(() => {
+            setSeconds(Math.floor((Date.now() - timerState.startedAt!) / 1000));
+        }, 500);
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [timerState, id]);
+
     const toggleTimer = () => {
         if (running) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            setRunning(false);
+            // пауза: запоминаем накопленное как сдвиг
+            setTimerState({ running: false, startedAt: Date.now() - seconds * 1000 });
         } else {
-            const started = Date.now() - seconds * 1000;
-            timerRef.current = setInterval(() => {
-                setSeconds(Math.floor((Date.now() - started) / 1000));
-            }, 500);
-            setRunning(true);
+            setTimerState({ running: true, startedAt: Date.now() - seconds * 1000 });
         }
     };
 
     const resetTimer = () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setRunning(false);
+        setTimerState({ running: false, startedAt: null });
         setSeconds(0);
     };
 
