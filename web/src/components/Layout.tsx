@@ -54,7 +54,9 @@ export default function Layout() {
     );
 
     return (
-        <div className="min-h-screen bg-night text-ink flex">
+        <div className="min-h-screen bg-night text-ink flex
+                        bg-[url('/images/main_bg.png')] bg-cover bg-center bg-no-repeat
+                        lg:bg-none">
             {/* Сайдбар — только на lg+ */}
             <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-line bg-panel sticky top-0 h-screen">
                 <div className="px-6 py-5 border-b border-line">
