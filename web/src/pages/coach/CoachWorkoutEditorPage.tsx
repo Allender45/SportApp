@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
 import { api } from '../../api/client';
+import { uuid } from '@shared/utils';
 
 type Row = {
     id: string;
@@ -21,7 +22,7 @@ type WorkoutFull = {
 };
 
 const emptyRow = (): Row => ({
-    id: crypto.randomUUID(),
+    id: uuid(),
     name: '', weight: 0, sets: 3, reps: 10, trainerNote: '',
 });
 

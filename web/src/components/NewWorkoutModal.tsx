@@ -3,11 +3,12 @@ import { AxiosError } from 'axios';
 import { Plus } from 'lucide-react';
 import { api } from '../api/client';
 import { Modal, Input } from '@/components';
+import { uuid } from '@shared/utils';
 
 type ExRow = { key: string; name: string; weight: number; sets: number; reps: number };
 
 const emptyEx = (): ExRow => ({
-    key: crypto.randomUUID(), name: '', weight: 0, sets: 3, reps: 10,
+    key: uuid(), name: '', weight: 0, sets: 3, reps: 10,
 });
 
 export default function NewWorkoutModal({ athleteId, onClose, onCreated }: {
@@ -32,7 +33,7 @@ export default function NewWorkoutModal({ athleteId, onClose, onCreated }: {
         const exercises = exRows
             .filter(r => r.name.trim())
             .map((r, i) => ({
-                id: crypto.randomUUID(),
+                id: uuid(),
                 name: r.name.trim(),
                 weight: r.weight,
                 sets: r.sets,
