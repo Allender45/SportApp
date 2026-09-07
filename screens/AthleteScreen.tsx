@@ -7,72 +7,48 @@ import {
     StyleSheet,
     ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { AxiosError } from 'axios';
+import { api, saveTokens, getAccessToken } from '../api/client';
 
 type Props = {
     navigation: NativeStackNavigationProp<any>;
 };
 
-async function navigateToNextWorkout(
-    navigation: NativeStackNavigationProp<any>,
-    athleteId: string
-) {
-    try {
-        const snapshot = await getDocs(
-            query(collection(db, 'exercises'), where('athleteId', '==', athleteId))
-        );
-
-        const groupMap: Record<number, { total: number; done: number }> = {};
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const g = data.workoutGroup as number;
-            if (!groupMap[g]) groupMap[g] = { total: 0, done: 0 };
-            groupMap[g].total++;
-            if (data.status === '✓') groupMap[g].done++;
-        });
-
-        const sorted = Object.entries(groupMap)
-            .map(([g, v]) => ({ workoutGroup: Number(g), ...v }))
-            .sort((a, b) => a.workoutGroup - b.workoutGroup);
-
-        const next = sorted.find(g => g.done < g.total);
-
-        if (next) {
-            navigation.replace('WorkoutDetail', { workoutGroup: next.workoutGroup, athleteId });
-        } else {
-            navigation.replace('WorkoutList', { athleteId });
-        }
-    } catch {
-        navigation.replace('WorkoutList', { athleteId });
-    }
-}
-
 export default function AthleteScreen({ navigation }: Props) {
-    const [athleteId, setAthleteId] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [phone, setPhone] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [checking, setChecking] = useState(true);
 
     useEffect(() => {
-        AsyncStorage.getItem('athleteId').then(id => {
-            if (id) {
-                navigateToNextWorkout(navigation, id);
+        getAccessToken().then(token => {
+            if (token) {
+                navigation.replace('WorkoutList');
             } else {
-                setLoading(false);
+                setChecking(false);
             }
         });
     }, [navigation]);
 
     const handleLogin = async () => {
-        const id = athleteId.trim();
-        if (!id) return;
-        setLoading(true);
-        AsyncStorage.setItem('athleteId', id);
-        await navigateToNextWorkout(navigation, id);
+        if (!phone.trim() || !password) return;
+        setError('');
+        setSubmitting(true);
+        try {
+            const res = await api.post('/auth/login', { phone: phone.trim(), password });
+            await saveTokens(res.data.accessToken, res.data.refreshToken);
+            navigation.replace('WorkoutList');
+        } catch (err) {
+            const axiosErr = err as AxiosError<{ error?: string }>;
+            setError(axiosErr.response?.data?.error ?? 'Не удалось войти. Проверь соединение.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
-    if (loading) return (
+    if (checking) return (
         <View style={styles.center}>
             <ActivityIndicator size="large" color="#8F959E" />
         </View>
@@ -82,16 +58,26 @@ export default function AthleteScreen({ navigation }: Props) {
         <View style={styles.container}>
             <TextInput
                 style={styles.input}
-                value={athleteId}
-                onChangeText={setAthleteId}
-                placeholder="Кто ты?"
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Телефон"
                 placeholderTextColor="#555"
+                keyboardType="phone-pad"
                 autoCapitalize="none"
                 autoCorrect={false}
+            />
+            <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Пароль"
+                placeholderTextColor="#555"
+                secureTextEntry
                 onSubmitEditing={handleLogin}
             />
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Войти</Text>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={submitting}>
+                <Text style={styles.buttonText}>{submitting ? 'Вход...' : 'Войти'}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -101,6 +87,7 @@ const styles = StyleSheet.create({
     center:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
     container:  { flex: 1, padding: 24, justifyContent: 'center' },
     input:      { backgroundColor: 'rgba(30,33,38,0.97)', borderWidth: 1, borderColor: '#3A3F47', borderRadius: 8, padding: 14, fontSize: 16, marginBottom: 16, color: '#EFF2F5' },
+    error:      { color: '#BF5050', fontSize: 13, marginBottom: 12, textAlign: 'center' },
     button:     { backgroundColor: '#3A6B3A', borderRadius: 8, padding: 16, alignItems: 'center' },
     buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
 });

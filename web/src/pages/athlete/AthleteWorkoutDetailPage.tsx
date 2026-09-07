@@ -158,10 +158,12 @@ export default function AthleteWorkoutDetailPage() {
                                 <div className="text-ink font-bold uppercase tracking-wide">{e.name} {e.weight != 0 && ` - ${e.weight} кг`}</div>
 
                                 {/* Счётчик подходов: минус / полоски / плюс */}
-                                <div className="flex items-center gap-3 mt-2"
-                                     onClick={ev => ev.stopPropagation()}>
+                                <div className="flex items-center gap-3 mt-2">
                                     <button
-                                        onClick={() => bumpSets(e.id, -1, e.sets)}
+                                        onClick={(ev) => {
+                                            ev.stopPropagation()
+                                            bumpSets(e.id, -1, e.sets)
+                                        }}
                                         className="w-7 h-7 rounded-full bg-panel border border-line
                                                    flex items-center justify-center text-dim hover:text-ink"
                                     >
@@ -175,7 +177,10 @@ export default function AthleteWorkoutDetailPage() {
                                         ))}
                                     </div>
                                     <button
-                                        onClick={() => bumpSets(e.id, 1, e.sets)}
+                                        onClick={(ev) => {
+                                            ev.stopPropagation()
+                                            bumpSets(e.id, 1, e.sets)
+                                        }}
                                         className="w-7 h-7 rounded-full bg-panel border border-line
                                                    flex items-center justify-center text-dim hover:text-ink"
                                     >
@@ -247,7 +252,7 @@ export default function AthleteWorkoutDetailPage() {
                         </button>
                         <button
                             onClick={() => mark('DONE')}
-                            className="bg-gradient-to-r from-cyan-deep to-cyan text-night font-bold
+                            className="bg-cyan text-night font-bold
                                        rounded-xl py-3 hover:brightness-110 transition-all"
                         >
                             Сделал

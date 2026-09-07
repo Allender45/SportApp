@@ -1,32 +1,22 @@
-import React, {useState, useCallback, useRef} from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity,
-    StyleSheet, ActivityIndicator, PanResponder
+    StyleSheet, ActivityIndicator, PanResponder,
 } from 'react-native';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import { api } from '../api/client';
+import type { WorkoutSummary } from '../api/types';
 
 type Props = {
     navigation: NativeStackNavigationProp<any>;
-    route: RouteProp<any>;
 };
 
-// Группа упражнений = одна тренировка
-type WorkoutGroup = {
-    workoutGroup: number;
-    total: number;
-    done: number;
-    latestDate?: string;
-};
-
-export default function WorkoutListScreen({ navigation, route }: Props) {
-    const { athleteId } = route.params as { athleteId: string };
-    const [groups, setGroups] = useState<WorkoutGroup[]>([]);
+export default function WorkoutListScreen({ navigation }: Props) {
+    const [workouts, setWorkouts] = useState<WorkoutSummary[]>([]);
     const [loading, setLoading] = useState(true);
-    const groupsRef = useRef<WorkoutGroup[]>([]);
+    const workoutsRef = useRef<WorkoutSummary[]>([]);
 
     const swipePan = useRef(
         PanResponder.create({
@@ -34,12 +24,9 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
                 Math.abs(gs.dx) > Math.abs(gs.dy) * 2 && Math.abs(gs.dx) > 30,
             onPanResponderRelease: (_, gs) => {
                 if (gs.dx > 80) {
-                    const next = groupsRef.current.find(g => g.done < g.total);
+                    const next = workoutsRef.current.find(w => w.done < w.total);
                     if (next) {
-                        navigation.navigate('WorkoutDetail', {
-                            workoutGroup: next.workoutGroup,
-                            athleteId,
-                        });
+                        navigation.navigate('WorkoutDetail', { workoutId: next.id });
                     }
                 }
             },
@@ -49,46 +36,14 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
     useFocusEffect(
         useCallback(() => {
             setLoading(true);
-            const fetchExercises = async () => {
-                try {
-                    const q = query(
-                        collection(db, 'exercises'),
-                        where('athleteId', '==', athleteId)
-                    );
-                    const snapshot = await getDocs(q);
-
-                    const groupMap: Record<number, WorkoutGroup> = {};
-                    snapshot.docs.forEach(doc => {
-                        const data = doc.data();
-                        const g = data.workoutGroup as number;
-                        if (!groupMap[g]) groupMap[g] = { workoutGroup: g, total: 0, done: 0 };
-                        groupMap[g].total++;
-                        if (data.status === '✓') groupMap[g].done++;
-                        if (data.date) {
-                            const parseDate = (d: string) => { const [day, month, year] = d.split('.').map(Number); return new Date(year, month - 1, day).getTime(); };
-                            if (!groupMap[g].latestDate || parseDate(data.date) > parseDate(groupMap[g].latestDate)) {
-                                groupMap[g].latestDate = data.date;
-                            }
-                        }
-                    });
-
-                    const sorted = Object.values(groupMap).sort((a, b) => {
-                        const aDone = a.done === a.total && a.total > 0 ? 1 : 0;
-                        const bDone = b.done === b.total && b.total > 0 ? 1 : 0;
-                        if (aDone !== bDone) return aDone - bDone;
-                        return a.workoutGroup - b.workoutGroup;
-                    });
-                    groupsRef.current = sorted;
-                    setGroups(sorted);
-                } catch (error) {
-                    console.error('Ошибка загрузки:', error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            fetchExercises();
-        }, [athleteId])
+            api.get<WorkoutSummary[]>('/my/workouts')
+                .then(res => {
+                    workoutsRef.current = res.data;
+                    setWorkouts(res.data);
+                })
+                .catch(error => console.error('Ошибка загрузки:', error))
+                .finally(() => setLoading(false));
+        }, [])
     );
 
     if (loading) return (
@@ -97,7 +52,7 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
         </View>
     );
 
-    if (groups.length === 0) return (
+    if (workouts.length === 0) return (
         <View style={styles.center}>
             <Text style={styles.emptyText}>Тренировок пока нет</Text>
         </View>
@@ -108,15 +63,12 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
             <FlatList
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
-                data={groups}
-                keyExtractor={item => String(item.workoutGroup)}
+                data={workouts}
+                keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         style={styles.card}
-                        onPress={() => navigation.navigate('WorkoutDetail', {
-                            workoutGroup: item.workoutGroup,
-                            athleteId,
-                        })}
+                        onPress={() => navigation.navigate('WorkoutDetail', { workoutId: item.id })}
                         activeOpacity={0.8}
                     >
                         {item.done === item.total && item.total > 0 && (
@@ -127,14 +79,16 @@ export default function WorkoutListScreen({ navigation, route }: Props) {
                             />
                         )}
                         <View>
-                            <Text style={styles.cardTitle}>ТРЕНИРОВКА #{item.workoutGroup}</Text>
+                            <Text style={styles.cardTitle}>
+                                ТРЕНИРОВКА #{item.number}{item.title ? ` — ${item.title}` : ''}
+                            </Text>
                             <Text style={styles.cardProgress}>{item.done} / {item.total} выполнено</Text>
                         </View>
                         <Text style={[styles.cardPercent, item.done === item.total && item.total > 0 && styles.cardPercentDone]}>
                             {item.total > 0 ? Math.round((item.done / item.total) * 100) : 0}%
                         </Text>
                         {item.latestDate && (
-                            <Text style={styles.cardDate}>{item.latestDate}</Text>
+                            <Text style={styles.cardDate}>{new Date(item.latestDate).toLocaleDateString('ru-RU')}</Text>
                         )}
                     </TouchableOpacity>
                 )}

@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { levenshtein } from '@shared/utils';
 
 const router = Router();
 router.use(requireAuth, requireRole('COACH', 'ADMIN'));
@@ -29,26 +28,6 @@ async function ownsAthlete(athleteId: string, coachId: string): Promise<boolean>
     return athlete !== null;
 }
 
-// Если название почти совпадает с существующим шаблоном — вернуть похожее
-async function findSimilarName(name: string): Promise<string | null> {
-    const exact = await prisma.exerciseTemplate.findUnique({
-        where: { name },
-        select: { id: true },
-    });
-    if (exact) return null;
-
-    const templates = await prisma.exerciseTemplate.findMany({ select: { name: true } });
-    const lower = name.toLowerCase();
-    let best: string | null = null;
-    let bestDist = Infinity;
-    for (const t of templates) {
-        const d = levenshtein(lower, t.name.toLowerCase());
-        if (d < bestDist) { bestDist = d; best = t.name; }
-    }
-    const threshold = Math.max(2, Math.floor(name.length * 0.25));
-    return best !== null && bestDist <= threshold ? best : null;
-}
-
 // POST /workouts — создать тренировку; номер присваивается автоматически
 router.post('/', async (req, res) => {
     const parsed = createWorkoutSchema.safeParse(req.body);
@@ -61,16 +40,6 @@ router.post('/', async (req, res) => {
     if (!(await ownsAthlete(athleteId, req.user!.userId))) {
         res.status(404).json({ error: 'Атлет не найден' });
         return;
-    }
-
-    for (const e of exercises) {
-        const similar = await findSimilarName(e.name);
-        if (similar) {
-            res.status(422).json({
-                error: `Похоже на опечатку: «${e.name}». Возможно, вы имели в виду «${similar}»?`,
-            });
-            return;
-        }
     }
 
     const max = await prisma.workout.aggregate({
@@ -137,16 +106,6 @@ router.patch('/:id', async (req, res) => {
 
     const { exercises, title } = parsed.data;
     const keepIds = exercises.map(e => e.id);
-
-    for (const e of exercises) {
-        const similar = await findSimilarName(e.name);
-        if (similar) {
-            res.status(422).json({
-                error: `Похоже на опечатку: «${e.name}». Возможно, вы имели в виду «${similar}»?`,
-            });
-            return;
-        }
-    }
 
     await prisma.$transaction([
         ...exercises.map(e =>

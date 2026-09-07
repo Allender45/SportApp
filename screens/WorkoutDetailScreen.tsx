@@ -3,33 +3,20 @@ import {
     View, Text, Image, ScrollView, TouchableOpacity,
     TextInput, StyleSheet, ActivityIndicator, Alert, Modal, PanResponder, AppState
 } from 'react-native';
-import {collection, query, where, getDocs, updateDoc, doc} from 'firebase/firestore';
-import {db} from '../firebase/config';
 import LinearGradient from "react-native-linear-gradient";
 import {RouteProp, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {api, fileUrl} from '../api/client';
+import type {WorkoutDetail, ExerciseItem} from '../api/types';
 
 type Props = {
     route: RouteProp<any>;
 };
 
-type Exercise = {
-    id: string;
-    exercise: string;
-    weight: number;
-    sets: number;
-    reps: number;
-    trainerNote: string;
-    status?: string | null;
-    date: string;
-    athleteComment: string;
-    order?: number;
-};
-
 export default function WorkoutDetailScreen({route}: Props) {
-    const {workoutGroup, athleteId} = route.params as { workoutGroup: number; athleteId: string };
+    const {workoutId} = route.params as { workoutId: string };
 
-    const [exercises, setExercises] = useState<Exercise[]>([]);
+    const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -48,7 +35,7 @@ export default function WorkoutDetailScreen({route}: Props) {
                 Math.abs(gs.dx) > Math.abs(gs.dy) * 2 && Math.abs(gs.dx) > 30,
             onPanResponderRelease: (_, gs) => {
                 if (gs.dx < -80) {
-                    navigation.navigate('WorkoutList', {athleteId});
+                    navigation.navigate('WorkoutList');
                 }
             },
         })
@@ -87,29 +74,12 @@ export default function WorkoutDetailScreen({route}: Props) {
     }, []);
 
     useEffect(() => {
-        const fetchExercises = async () => {
-            try {
-                const q = query(
-                    collection(db, 'exercises'),
-                    where('athleteId', '==', athleteId),
-                    where('workoutGroup', '==', workoutGroup)
-                );
-                const snapshot = await getDocs(q);
-                const data = snapshot.docs.map(d => ({
-                    id: d.id,
-                    ...d.data(),
-                })) as Exercise[];
-                data.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                setExercises(data);
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchExercises();
-    }, [athleteId, workoutGroup]);
+        setLoading(true);
+        api.get<WorkoutDetail>(`/my/workouts/${workoutId}`)
+            .then(res => setWorkout(res.data))
+            .catch(error => console.error('Ошибка загрузки:', error))
+            .finally(() => setLoading(false));
+    }, [workoutId]);
 
     useEffect(() => {
         const sub = AppState.addEventListener('change', nextState => {
@@ -128,7 +98,7 @@ export default function WorkoutDetailScreen({route}: Props) {
 
     const openModal = (index: number) => {
         setSelectedIndex(index);
-        setModalComment(exercises[index].athleteComment || '');
+        setModalComment(workout?.exercises[index].lastResult?.athleteComment ?? '');
         setModalVisible(true);
     };
 
@@ -147,33 +117,39 @@ export default function WorkoutDetailScreen({route}: Props) {
 
     // Сохраняем результат и закрываем модалку
     const saveResult = async (done: boolean) => {
-        if (selectedIndex === null) return;
-        const ex = exercises[selectedIndex];
-        const newDate = new Date().toLocaleDateString('ru-RU'); // всегда
-
-        const updated = [...exercises];
-        updated[selectedIndex] = {...ex, status: done ? '✓' : '✗', date: newDate, athleteComment: modalComment};
-        setExercises(updated);
-        closeModal();
+        if (selectedIndex === null || !workout) return;
+        const ex = workout.exercises[selectedIndex];
+        const status = done ? 'DONE' : 'FAILED';
 
         try {
-            await updateDoc(doc(db, 'exercises', ex.id), {
-                status: done ? '✓' : '✗',
-                date: newDate,
-                athleteComment: modalComment,
+            await api.post(`/my/exercises/${ex.id}/result`, {
+                status,
+                athleteComment: modalComment.trim() || undefined,
             });
+            const updated = [...workout.exercises];
+            updated[selectedIndex] = {
+                ...ex,
+                lastResult: {
+                    id: ex.lastResult?.id ?? '',
+                    status,
+                    athleteComment: modalComment || null,
+                    completedAt: new Date().toISOString(),
+                },
+            };
+            setWorkout({...workout, exercises: updated});
+            closeModal();
         } catch (error) {
             Alert.alert('Ошибка', `Не удалось сохранить. ошибка: ${error}`);
         }
     };
 
-    if (loading) return (
+    if (loading || !workout) return (
         <View style={styles.center}>
             <ActivityIndicator size="large" color="#8F959E"/>
         </View>
     );
 
-    const selectedEx = selectedIndex !== null ? exercises[selectedIndex] : null;
+    const selectedEx = selectedIndex !== null ? workout.exercises[selectedIndex] : null;
 
     const getExerciseImage = (name: string) => {
         const lower = name.toLowerCase();
@@ -188,97 +164,103 @@ export default function WorkoutDetailScreen({route}: Props) {
         return null;
     };
 
+    const exerciseImageSource = (ex: ExerciseItem) =>
+        ex.imageUrl ? {uri: fileUrl(ex.imageUrl)} : getExerciseImage(ex.name);
+
     return (
         <View style={styles.screen} {...swipePan.panHandlers}>
             <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-                <Text style={styles.title}>ТРЕНИРОВКА #{workoutGroup}</Text>
+                <Text style={styles.title}>ТРЕНИРОВКА #{workout.number}</Text>
 
-                {exercises.map((ex, index) => (
-                    <TouchableOpacity
-                        key={ex.id}
-                        style={styles.card}
-                        onPress={() => openModal(index)}
-                        activeOpacity={0.8}
-                    >
-                        {/* Градиент статуса — зелёный если выполнено, красный если нет */}
-                        {(() => { const img = getExerciseImage(ex.exercise); return img ? (
-                            <View style={styles.cardImageContainer}>
-                                <Image source={img} style={styles.cardImage} resizeMode="cover" />
-                                <LinearGradient
-                                    colors={['rgba(30,33,38,0.97)', 'rgba(30,33,38,0.00)']}
-                                    start={{x: 0, y: 0.5}} end={{x: 0.6, y: 0.5}}
-                                    style={StyleSheet.absoluteFill}
-                                />
-                            </View>
-                        ) : null; })()}
-                        {ex.status === '✓' && (
-                            <LinearGradient colors={['rgba(111,191,111,0.20)', 'rgba(111,191,111,0.00)']}
-                                            start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
-                                            style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
-                            />
-                        )}
-                        {ex.status === '✗' && !!ex.date && (
-                            <LinearGradient colors={['rgba(191,80,80,0.20)', 'rgba(191,80,80,0.00)']}
-                                            start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
-                                            style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
-                            />
-                        )}
-                        <View style={styles.cardInfo}>
-                            <Text style={styles.exName}>{ex.exercise.toUpperCase()}</Text>
-                            {ex.sets > 1 && (
-                                <View style={styles.setsTrackerRow}>
-                                    <View style={styles.setsTrackerRow}>
-                                        <TouchableOpacity
-                                            onPress={() => decrementSets(ex.id)}
-                                            style={styles.setsTrackerBtn}
-                                            hitSlop={{top: 8, bottom: 8, left: 6, right: 6}}
-                                        >
-                                            <Text style={styles.setsTrackerBtnText}>−</Text>
-                                        </TouchableOpacity>
-                                        <View style={styles.setsSegments}>
-                                            {Array.from({length: ex.sets}).map((_, i) => (
-                                                <View
-                                                    key={i}
-                                                    style={[
-                                                        styles.setsSegment,
-                                                        i < (completedSets[ex.id] ?? 0)
-                                                            ? styles.setsSegmentDone
-                                                            : styles.setsSegmentEmpty,
-                                                    ]}
-                                                />
-                                            ))}
-                                        </View>
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                const current = completedSets[ex.id] ?? 0;
-                                                if (current < ex.sets) {
-                                                    incrementSets(ex.id, ex.sets);
-                                                    if (current + 1 === ex.sets) {
-                                                        openModal(index);
-                                                    }
-                                                }
-                                            }}
-                                            style={styles.setsTrackerBtn}
-                                            hitSlop={{top: 8, bottom: 8, left: 6, right: 6}}
-                                        >
-                                            <Text style={styles.setsTrackerBtnText}>+</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                {workout.exercises.map((ex, index) => {
+                    const imgSource = exerciseImageSource(ex);
+                    const status = ex.lastResult?.status;
+                    return (
+                        <TouchableOpacity
+                            key={ex.id}
+                            style={styles.card}
+                            onPress={() => openModal(index)}
+                            activeOpacity={0.8}
+                        >
+                            {imgSource && (
+                                <View style={styles.cardImageContainer}>
+                                    <Image source={imgSource} style={styles.cardImage} resizeMode="cover" />
+                                    <LinearGradient
+                                        colors={['rgba(30,33,38,0.97)', 'rgba(30,33,38,0.00)']}
+                                        start={{x: 0, y: 0.5}} end={{x: 0.6, y: 0.5}}
+                                        style={StyleSheet.absoluteFill}
+                                    />
                                 </View>
                             )}
-                            <Text style={styles.repsText}>× {ex.reps} повторений</Text>
-                            {ex.weight > 0 && (
-                                <Text style={styles.weightText}>{ex.weight} кг</Text>
+                            {status === 'DONE' && (
+                                <LinearGradient colors={['rgba(111,191,111,0.20)', 'rgba(111,191,111,0.00)']}
+                                                start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
+                                                style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
+                                />
                             )}
-                            {ex.trainerNote ? (
-                                <Text style={styles.trainerNote}>📋 {ex.trainerNote}</Text>
-                            ) : null}
-                            {ex.athleteComment ? (
-                                <Text style={styles.commentPreview}>📝 {ex.athleteComment.substring(0, 35)}</Text>
-                            ) : null}
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                            {status === 'FAILED' && (
+                                <LinearGradient colors={['rgba(191,80,80,0.20)', 'rgba(191,80,80,0.00)']}
+                                                start={{x: 0, y: 0}} end={{x: 0.3, y: 0}}
+                                                style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}
+                                />
+                            )}
+                            <View style={styles.cardInfo}>
+                                <Text style={styles.exName}>{ex.name.toUpperCase()}</Text>
+                                {ex.sets > 1 && (
+                                    <View style={styles.setsTrackerRow}>
+                                        <View style={styles.setsTrackerRow}>
+                                            <TouchableOpacity
+                                                onPress={() => decrementSets(ex.id)}
+                                                style={styles.setsTrackerBtn}
+                                                hitSlop={{top: 8, bottom: 8, left: 6, right: 6}}
+                                            >
+                                                <Text style={styles.setsTrackerBtnText}>−</Text>
+                                            </TouchableOpacity>
+                                            <View style={styles.setsSegments}>
+                                                {Array.from({length: ex.sets}).map((_, i) => (
+                                                    <View
+                                                        key={i}
+                                                        style={[
+                                                            styles.setsSegment,
+                                                            i < (completedSets[ex.id] ?? 0)
+                                                                ? styles.setsSegmentDone
+                                                                : styles.setsSegmentEmpty,
+                                                        ]}
+                                                    />
+                                                ))}
+                                            </View>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    const current = completedSets[ex.id] ?? 0;
+                                                    if (current < ex.sets) {
+                                                        incrementSets(ex.id, ex.sets);
+                                                        if (current + 1 === ex.sets) {
+                                                            openModal(index);
+                                                        }
+                                                    }
+                                                }}
+                                                style={styles.setsTrackerBtn}
+                                                hitSlop={{top: 8, bottom: 8, left: 6, right: 6}}
+                                            >
+                                                <Text style={styles.setsTrackerBtnText}>+</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                )}
+                                <Text style={styles.repsText}>× {ex.reps} повторений</Text>
+                                {ex.weight > 0 && (
+                                    <Text style={styles.weightText}>{ex.weight} кг</Text>
+                                )}
+                                {ex.trainerNote ? (
+                                    <Text style={styles.trainerNote}>📋 {ex.trainerNote}</Text>
+                                ) : null}
+                                {ex.lastResult?.athleteComment ? (
+                                    <Text style={styles.commentPreview}>📝 {ex.lastResult.athleteComment.substring(0, 35)}</Text>
+                                ) : null}
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
 
                 <Modal
                     visible={modalVisible}
@@ -292,7 +274,7 @@ export default function WorkoutDetailScreen({route}: Props) {
                             {selectedEx && (
                                 <>
                                     <Text style={styles.modalExName}>
-                                        {selectedEx.exercise.toUpperCase()}
+                                        {selectedEx.name.toUpperCase()}
                                     </Text>
 
                                     <TouchableOpacity style={styles.btnComplete} onPress={() => saveResult(true)}>
@@ -319,7 +301,6 @@ export default function WorkoutDetailScreen({route}: Props) {
                 </Modal>
             </ScrollView>
 
-            {/* Футер с секундомером */}
             <View style={styles.footer}>
                 <Text style={styles.timerDisplay}>{formatTime(seconds)}</Text>
                 <View style={styles.timerButtons}>
