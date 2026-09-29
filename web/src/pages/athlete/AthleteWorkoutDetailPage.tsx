@@ -163,7 +163,7 @@ export default function AthleteWorkoutDetailPage() {
                         <div
                             key={e.id}
                             onClick={() => { setSelectedId(e.id); setComment(e.lastResult?.athleteComment ?? ''); }}
-                            className={`relative h-26 rounded-2xl overflow-hidden border border-line
+                            className={`relative h-22 rounded-2xl overflow-hidden border border-line
                                        bg-card 
                                        cursor-pointer ${accent.hover} transition-colors`}
                         >
