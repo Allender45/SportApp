@@ -197,14 +197,40 @@ export default function AthleteWorkoutDetailPage() {
                                                     leading-tight line-clamp-2">
                                         {e.name}
                                     </div>
-                                    <div>
-                                        <div className="text-dim text-[7px] sm:text-[8px] tracking-[0.1em] uppercase whitespace-nowrap">
-                                            Рабочий вес
-                                        </div>
-                                        <div className={`mt-0.5 flex items-center gap-1 font-display
+                                    <div className='flex justify-between'>
+                                        <div>
+                                            <div className="text-dim text-[7px] sm:text-[8px] tracking-[0.1em] uppercase whitespace-nowrap">
+                                                Рабочий вес
+                                            </div>
+                                            <div className={`mt-0.5 flex items-center gap-1 font-display
                                                          text-sm sm:text-lg leading-none ${accent.text}`}>
-                                            <Dumbbell size={13} />
-                                            {e.weight != 0 ? <>{e.weight}<span className="text-xs"> кг</span></> : '—'}
+                                                <Dumbbell size={13} />
+                                                {e.weight != 0 ? <>{e.weight}<span className="text-xs"> кг</span></> : '—'}
+                                            </div>
+                                        </div>
+
+                                        <div className='flex gap-3'>
+                                            <button
+                                                onClick={(ev) => {
+                                                    ev.stopPropagation()
+                                                    bumpSets(e.id, -1, e.sets)
+                                                }}
+                                                className="w-7 h-7 sm:w-10 sm:h-10 rounded-full border border-line
+                                                   flex items-center justify-center text-dim
+                                                   hover:text-ink hover:bg-white/5 transition-colors"
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(ev) => {
+                                                    ev.stopPropagation()
+                                                    bumpSets(e.id, 1, e.sets)
+                                                }}
+                                                className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full border ${accent.btn}
+                                                   flex items-center justify-center transition-colors`}
+                                            >
+                                                <Plus size={14} />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -231,7 +257,7 @@ export default function AthleteWorkoutDetailPage() {
                                 {/* Повторения */}
                                 <div className="shrink-0 flex flex-col items-center justify-center px-1.5 sm:px-3">
                                     <span className="text-dim text-[7px] sm:text-[8px] tracking-[0.1em] uppercase whitespace-nowrap">
-                                        Повт
+                                        Повторения
                                     </span>
                                     <span className="mt-0.5 font-display text-ink text-xl sm:text-2xl
                                                      leading-none tabular-nums">
@@ -240,29 +266,29 @@ export default function AthleteWorkoutDetailPage() {
                                 </div>
 
                                 {/* Кнопки минус / плюс */}
-                                <div className="shrink-0 flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-2.5">
-                                    <button
-                                        onClick={(ev) => {
-                                            ev.stopPropagation()
-                                            bumpSets(e.id, -1, e.sets)
-                                        }}
-                                        className="w-7 h-7 sm:w-10 sm:h-10 rounded-full border border-line
-                                                   flex items-center justify-center text-dim
-                                                   hover:text-ink hover:bg-white/5 transition-colors"
-                                    >
-                                        <Minus size={14} />
-                                    </button>
-                                    <button
-                                        onClick={(ev) => {
-                                            ev.stopPropagation()
-                                            bumpSets(e.id, 1, e.sets)
-                                        }}
-                                        className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full border ${accent.btn}
-                                                   flex items-center justify-center transition-colors`}
-                                    >
-                                        <Plus size={14} />
-                                    </button>
-                                </div>
+                                {/*<div className="shrink-0 flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-2.5">*/}
+                                {/*    <button*/}
+                                {/*        onClick={(ev) => {*/}
+                                {/*            ev.stopPropagation()*/}
+                                {/*            bumpSets(e.id, -1, e.sets)*/}
+                                {/*        }}*/}
+                                {/*        className="w-7 h-7 sm:w-10 sm:h-10 rounded-full border border-line*/}
+                                {/*                   flex items-center justify-center text-dim*/}
+                                {/*                   hover:text-ink hover:bg-white/5 transition-colors"*/}
+                                {/*    >*/}
+                                {/*        <Minus size={14} />*/}
+                                {/*    </button>*/}
+                                {/*    <button*/}
+                                {/*        onClick={(ev) => {*/}
+                                {/*            ev.stopPropagation()*/}
+                                {/*            bumpSets(e.id, 1, e.sets)*/}
+                                {/*        }}*/}
+                                {/*        className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full border ${accent.btn}*/}
+                                {/*                   flex items-center justify-center transition-colors`}*/}
+                                {/*    >*/}
+                                {/*        <Plus size={14} />*/}
+                                {/*    </button>*/}
+                                {/*</div>*/}
                             </div>
                         </div>
                     );
