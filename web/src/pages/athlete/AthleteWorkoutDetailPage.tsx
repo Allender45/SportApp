@@ -169,7 +169,7 @@ export default function AthleteWorkoutDetailPage() {
                         >
                             {/* Фото слева с затуханием вправо */}
                             {e.imageUrl && (
-                                <div className="absolute inset-y-0 left-0 w-14 sm:w-24">
+                                <div className="absolute inset-y-0 left-0 w-24 sm:w-24">
                                     <img src={fileUrl(e.imageUrl)} alt=""
                                          className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-linear-to-r from-transparent via-card/30 to-card/80" />
@@ -303,7 +303,7 @@ export default function AthleteWorkoutDetailPage() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={toggleTimer}
-                            className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-deep to-cyan
+                            className="w-12 h-12 rounded-full bg-cyan
                                        text-night flex items-center justify-center
                                        hover:brightness-110 transition-all shadow-lg shadow-cyan/25"
                         >
