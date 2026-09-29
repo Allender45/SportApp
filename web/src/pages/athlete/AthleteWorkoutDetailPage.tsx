@@ -1,10 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Minus, Plus, Play, Pause, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Play, Pause, RotateCcw, Dumbbell } from 'lucide-react';
 import { api, fileUrl } from '@/api';
 import { Modal } from '@/components';
 import type { WorkoutDetail } from '@/api';
-import { plural } from '@shared/utils';
+
+// Акцентные цвета карточек — зациклены по порядку упражнений
+const ACCENTS = [
+    {
+        bar: 'bg-green-400',
+        text: 'text-green-400',
+        tint: 'from-green-500/15 via-green-500/5',
+        hover: 'hover:border-green-400/40',
+        btn: 'border-green-400/40 text-green-400 hover:bg-green-400/10',
+    },
+    {
+        bar: 'bg-sky-400',
+        text: 'text-sky-400',
+        tint: 'from-sky-500/15 via-sky-500/5',
+        hover: 'hover:border-sky-400/40',
+        btn: 'border-sky-400/40 text-sky-400 hover:bg-sky-400/10',
+    },
+    {
+        bar: 'bg-amber-400',
+        text: 'text-amber-400',
+        tint: 'from-amber-500/15 via-amber-500/5',
+        hover: 'hover:border-amber-400/40',
+        btn: 'border-amber-400/40 text-amber-400 hover:bg-amber-400/10',
+    },
+    {
+        bar: 'bg-rose-400',
+        text: 'text-rose-400',
+        tint: 'from-rose-500/15 via-rose-500/5',
+        hover: 'hover:border-rose-400/40',
+        btn: 'border-rose-400/40 text-rose-400 hover:bg-rose-400/10',
+    },
+];
 
 export default function AthleteWorkoutDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -124,26 +155,29 @@ export default function AthleteWorkoutDetailPage() {
             </div>
 
             <div className="space-y-3">
-                {workout.exercises.map(e => {
+                {workout.exercises.map((e, idx) => {
                     const done = doneSets[e.id] ?? 0;
                     const status = e.lastResult?.status;
+                    const accent = ACCENTS[idx % ACCENTS.length];
                     return (
                         <div
                             key={e.id}
                             onClick={() => { setSelectedId(e.id); setComment(e.lastResult?.athleteComment ?? ''); }}
-                            className="relative h-28 rounded-2xl overflow-hidden border border-line
-                                       bg-card cursor-pointer hover:border-cyan/40 transition-colors"
+                            className={`relative h-26 rounded-2xl overflow-hidden border border-line
+                                       bg-card 
+                                       cursor-pointer ${accent.hover} transition-colors`}
                         >
-                            {/* Картинка справа с затуханием влево */}
+                            {/* Фото слева с затуханием вправо */}
                             {e.imageUrl && (
-                                <div className="absolute inset-y-0 right-0 w-3/5">
+                                <div className="absolute inset-y-0 left-0 w-14 sm:w-24">
                                     <img src={fileUrl(e.imageUrl)} alt=""
                                          className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-linear-to-r from-card via-card/70 to-transparent" />
-                                    {/* растягиваем затухание за левый край картинки */}
-                                    <div className="absolute inset-y-0 -left-16 w-16 bg-linear-to-r from-card to-transparent" />
+                                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-card/30 to-card/80" />
                                 </div>
                             )}
+
+                            {/* Акцентная полоса на левой грани (поверх фото) */}
+                            <span className={`absolute inset-y-0 left-0 w-1 z-10 ${accent.bar}`} />
 
                             {status === 'DONE' && (
                                 <div className="absolute inset-y-0 left-0 w-2/5 pointer-events-none
@@ -154,42 +188,80 @@ export default function AthleteWorkoutDetailPage() {
                                                 bg-linear-to-r from-red-500/25 to-transparent" />
                             )}
 
-                            <div className="relative h-full flex flex-col justify-center px-5">
-                                <div className="text-ink font-bold uppercase tracking-wide">{e.name} {e.weight != 0 && ` - ${e.weight} кг`}</div>
+                            {/* Один ряд сегментов с разделителями */}
+                            <div className={`relative z-10 h-full flex items-stretch divide-x divide-line
+                                            ${e.imageUrl ? 'pl-16 sm:pl-28' : 'pl-4'}`}>
+                                {/* Название + рабочий вес */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 pr-2 sm:pr-3 border-l-0">
+                                    <div className="font-display text-ink text-sm sm:text-lg uppercase
+                                                    leading-tight line-clamp-2">
+                                        {e.name}
+                                    </div>
+                                    <div>
+                                        <div className="text-dim text-[7px] sm:text-[8px] tracking-[0.1em] uppercase whitespace-nowrap">
+                                            Рабочий вес
+                                        </div>
+                                        <div className={`mt-0.5 flex items-center gap-1 font-display
+                                                         text-sm sm:text-lg leading-none ${accent.text}`}>
+                                            <Dumbbell size={13} />
+                                            {e.weight != 0 ? <>{e.weight}<span className="text-xs"> кг</span></> : '—'}
+                                        </div>
+                                    </div>
+                                </div>
 
-                                {/* Счётчик подходов: минус / полоски / плюс */}
-                                <div className="flex items-center gap-3 mt-2">
+                                {/* Подходы */}
+                                <div className="shrink-0 flex flex-col items-center justify-center px-1.5 sm:px-3">
+                                    <span className="text-dim text-[7px] sm:text-[8px] tracking-[0.1em] uppercase whitespace-nowrap">
+                                        Подходы
+                                    </span>
+                                    <span className="mt-0.5 font-display text-xl sm:text-2xl leading-none
+                                                     tabular-nums whitespace-nowrap">
+                                        <span className={accent.text}>{done}</span>
+                                        <span className="text-dim text-sm sm:text-base"> / {e.sets}</span>
+                                    </span>
+                                    <span className="mt-1.5 flex gap-1">
+                                        {Array.from({ length: e.sets }).map((_, i) => (
+                                            <span key={i}
+                                                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors ${
+                                                      i < done ? accent.bar : 'bg-line'}`} />
+                                        ))}
+                                    </span>
+                                </div>
+
+                                {/* Повторения */}
+                                <div className="shrink-0 flex flex-col items-center justify-center px-1.5 sm:px-3">
+                                    <span className="text-dim text-[7px] sm:text-[8px] tracking-[0.1em] uppercase whitespace-nowrap">
+                                        Повт
+                                    </span>
+                                    <span className="mt-0.5 font-display text-ink text-xl sm:text-2xl
+                                                     leading-none tabular-nums">
+                                        {e.reps}
+                                    </span>
+                                </div>
+
+                                {/* Кнопки минус / плюс */}
+                                <div className="shrink-0 flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-2.5">
                                     <button
                                         onClick={(ev) => {
                                             ev.stopPropagation()
                                             bumpSets(e.id, -1, e.sets)
                                         }}
-                                        className="w-7 h-7 rounded-full bg-panel border border-line
-                                                   flex items-center justify-center text-dim hover:text-ink"
+                                        className="w-7 h-7 sm:w-10 sm:h-10 rounded-full border border-line
+                                                   flex items-center justify-center text-dim
+                                                   hover:text-ink hover:bg-white/5 transition-colors"
                                     >
                                         <Minus size={14} />
                                     </button>
-                                    <div className="flex gap-1">
-                                        {Array.from({ length: e.sets }).map((_, i) => (
-                                            <span key={i}
-                                                  className={`w-1.5 h-5 rounded-full ${
-                                                      i < done ? 'bg-cyan' : 'bg-line'}`} />
-                                        ))}
-                                    </div>
                                     <button
                                         onClick={(ev) => {
                                             ev.stopPropagation()
                                             bumpSets(e.id, 1, e.sets)
                                         }}
-                                        className="w-7 h-7 rounded-full bg-panel border border-line
-                                                   flex items-center justify-center text-dim hover:text-ink"
+                                        className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full border ${accent.btn}
+                                                   flex items-center justify-center transition-colors`}
                                     >
                                         <Plus size={14} />
                                     </button>
-                                </div>
-
-                                <div className="text-dim text-sm mt-1.5">
-                                    {e.reps} {plural(e.reps, 'повторение', 'повторения', 'повторений')}
                                 </div>
                             </div>
                         </div>

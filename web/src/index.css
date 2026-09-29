@@ -1,6 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
 @import "tailwindcss";
 
 @theme {
+    /* Шрифты */
+    --font-display: "Russo One", "Arial Black", sans-serif;
+
     /* Фоны */
     --color-night: #060B14;      /* основной фон */
     --color-panel: #0D1522;      /* панели, сайдбар */
