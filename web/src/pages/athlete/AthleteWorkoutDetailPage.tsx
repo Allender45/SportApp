@@ -169,7 +169,7 @@ export default function AthleteWorkoutDetailPage() {
                         >
                             {/* Фото слева с затуханием вправо */}
                             {e.imageUrl && (
-                                <div className="absolute inset-y-0 left-0 w-24 sm:w-24">
+                                <div className="absolute inset-y-0 left-0 w-20 sm:w-24">
                                     <img src={fileUrl(e.imageUrl)} alt=""
                                          className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-linear-to-r from-transparent via-card/30 to-card/80" />
@@ -190,7 +190,7 @@ export default function AthleteWorkoutDetailPage() {
 
                             {/* Один ряд сегментов с разделителями */}
                             <div className={`relative z-10 h-full flex items-stretch divide-x divide-line
-                                            ${e.imageUrl ? 'pl-16 sm:pl-28' : 'pl-4'}`}>
+                                            ${e.imageUrl ? 'pl-20 sm:pl-28' : 'pl-4'}`}>
                                 {/* Название + рабочий вес */}
                                 <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 pr-2 sm:pr-3 border-l-0">
                                     <div className="font-display text-ink text-sm sm:text-lg uppercase
