@@ -1,18 +1,28 @@
 import {useEffect, useState} from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-    Dumbbell, History, CalendarDays, BarChart3, MessageCircle, Newspaper,
-    Users, LogOut, Menu, X,
+  Dumbbell,
+  History,
+  CalendarDays,
+  BarChart3,
+  MessageCircle,
+  Newspaper,
+  Users,
+  LogOut,
+  Menu,
+  X,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '../auth/authCore.ts';
 
 const athleteMenu = [
-    { to: '/my', label: 'Программа', icon: Dumbbell },
-    { to: '/my/history', label: 'История', icon: History },
-    { to: '/my/upcoming', label: 'Будущие', icon: CalendarDays },
-    { to: '/my/stats', label: 'Статистика', icon: BarChart3 },
-    { to: '/my/chat', label: 'Чат с тренером', icon: MessageCircle },
-    { to: '/my/news', label: 'Новости', icon: Newspaper },
+  { to: '/my', label: 'Программа', icon: Dumbbell },
+  { to: '/my/history', label: 'История', icon: History },
+  { to: '/my/upcoming', label: 'Будущие', icon: CalendarDays },
+  { to: '/my/stats', label: 'Статистика', icon: BarChart3 },
+  { to: '/my/chat', label: 'Чат с тренером', icon: MessageCircle },
+  { to: '/my/news', label: 'Новости', icon: Newspaper },
+  { to: '/my/ai_chat', label: 'Спроси ИИ', icon: Bot },
 ];
 
 const coachMenu = [

@@ -1,7 +1,14 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { authRouter, athletesRouter, workoutsRouter, myRouter, exerciseTemplatesRoutes } from './routes';
+import {
+  authRouter,
+  athletesRouter,
+  workoutsRouter,
+  myRouter,
+  exerciseTemplatesRoutes,
+  aiChatRouter,
+} from './routes';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from "node:path";
@@ -24,6 +31,7 @@ app.use('/api/athletes', athletesRouter);
 app.use('/api/workouts', workoutsRouter);
 app.use('/api/my', myRouter);
 app.use('/api/exercise-templates', exerciseTemplatesRoutes);
+app.use('/api/my/ai-chat', aiChatRouter);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 

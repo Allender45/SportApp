@@ -43,6 +43,8 @@ model Athlete {
   coach      User?     @relation("CoachAthletes", fields: [coachId], references: [id])
   workouts   Workout[]
   coachNotes String?
+
+  aiConversation AiConversation?
 }
 
 model Workout {
@@ -83,4 +85,35 @@ model ExerciseTemplate {
   id       String  @id @default(uuid())
   name     String  @unique
   imageUrl String?
+}
+
+enum AiMessageRole {
+  USER
+  ASSISTANT
+}
+
+model AiConversation {
+  id        String  @id @default(cuid())
+  athleteId String  @unique
+  athlete   Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  // Краткое содержание всего предыдущего общения.
+  summary String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages AiMessage[]
+}
+
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role      AiMessageRole
+  content   String        @db.Text
+  createdAt DateTime      @default(now())
+
+  @@index([conversationId, createdAt])
 }

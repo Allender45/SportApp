@@ -296,7 +296,7 @@ export default function AthleteWorkoutDetailPage() {
             </div>
 
             {/* Таймер — фиксирован внизу */}
-            <div className="fixed bottom-0 left-0 right-0 bg-night/95 backdrop-blur border-t border-line
+            <div className="fixed bottom-0 left-0 right-0 z-30 bg-night/95 backdrop-blur border-t border-line
                             lg:left-60">
                 <div className="max-w-xl mx-auto px-6 py-3 flex items-center justify-between">
                     <span className="text-ink text-3xl font-bold tabular-nums">{fmt(seconds)}</span>
