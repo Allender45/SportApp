@@ -12,6 +12,7 @@ import {
   AthleteAiChatPage,
 } from './pages/athlete';
 import {CoachExercisesPage, CoachWorkoutEditorPage, CoachAthletePage, CoachAthletesPage} from './pages/coach';
+import ChatPage from './pages/chat/ChatPage';
 
 function homeFor(user: User): string {
     return user.role === 'ATHLETE' ? '/my' : '/coach';
@@ -59,6 +60,7 @@ export default function App() {
             element={<CoachWorkoutEditorPage />}
           />
           <Route path="/coach/exercises" element={<CoachExercisesPage />} />
+          <Route path="/coach/chat" element={<ChatPage />} />
         </Route>
 
         {/* Зона атлета — все страницы внутри Layout */}
@@ -77,10 +79,7 @@ export default function App() {
           <Route path="/my/history" element={<AthleteHistoryPage />} />
           <Route path="/my/upcoming" element={<AthleteUpcomingPage />} />
           <Route path="/my/stats" element={<StubPage title="Статистика" />} />
-          <Route
-            path="/my/chat"
-            element={<StubPage title="Чат с тренером" />}
-          />
+          <Route path="/my/chat" element={<ChatPage />} />
           <Route path="/my/news" element={<StubPage title="Новости" />} />
           <Route path="/my/ai_chat" element={<AthleteAiChatPage />} />
         </Route>

@@ -20,16 +20,17 @@ const athleteMenu = [
   { to: '/my/history', label: 'История', icon: History },
   { to: '/my/upcoming', label: 'Будущие', icon: CalendarDays },
   { to: '/my/stats', label: 'Статистика', icon: BarChart3 },
-  { to: '/my/chat', label: 'Чат с тренером', icon: MessageCircle },
+  { to: '/my/chat', label: 'Чаты', icon: MessageCircle, },
   { to: '/my/news', label: 'Новости', icon: Newspaper },
   { to: '/my/ai_chat', label: 'Спроси ИИ', icon: Bot },
 ];
 
 const coachMenu = [
-    { to: '/coach', label: 'Атлеты', icon: Users },
-    { to: '/coach/stats', label: 'Статистика', icon: BarChart3 },
-    { to: '/coach/news', label: 'Новости', icon: Newspaper },
-    { to: '/coach/exercises', label: 'Упражнения', icon: Dumbbell },
+  { to: '/coach', label: 'Атлеты', icon: Users },
+  { to: '/coach/stats', label: 'Статистика', icon: BarChart3 },
+  { to: '/coach/news', label: 'Новости', icon: Newspaper },
+  { to: '/coach/exercises', label: 'Упражнения', icon: Dumbbell },
+  { to: '/coach/chat', label: 'Чаты', icon: MessageCircle, },
 ];
 
 export default function Layout() {

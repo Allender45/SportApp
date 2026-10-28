@@ -8,6 +8,7 @@ import {
   myRouter,
   exerciseTemplatesRoutes,
   aiChatRouter,
+  chatsRouter,
 } from './routes';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -32,6 +33,7 @@ app.use('/api/workouts', workoutsRouter);
 app.use('/api/my', myRouter);
 app.use('/api/exercise-templates', exerciseTemplatesRoutes);
 app.use('/api/my/ai-chat', aiChatRouter);
+app.use('/api/chats', chatsRouter);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
